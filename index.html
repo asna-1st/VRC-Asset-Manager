@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' app: file:;
+      img-src 'self' data: blob: https: app: file:;
+      media-src 'self' https: blob: app: file:;
+      style-src 'self' 'unsafe-inline' https:;
+      font-src 'self' https: data:;
+      script-src 'self' 'unsafe-inline';
+      connect-src 'self' https:;
+      frame-src https://*.youtube.com https://*.youtube-nocookie.com https://player.vimeo.com;
+    ">
+    <title>VRCAssetManager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: #0b0b10;
+        font-family: 'Outfit', sans-serif;
+      }
+      #app-loading {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(1200px 800px at 30% 20%, rgba(99,102,241,0.18), transparent 60%),
+                    radial-gradient(900px 700px at 80% 70%, rgba(14,165,233,0.12), transparent 55%),
+                    #0b0b10;
+        color: #e5e7eb;
+        z-index: 9999;
+      }
+      .loading-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 22px;
+        border-radius: 14px;
+        background: rgba(17, 17, 23, 0.75);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        letter-spacing: 0.2px;
+      }
+      .loading-spinner {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        border: 2px solid rgba(255,255,255,0.2);
+        border-top-color: #9aa3ff;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .loading-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-loading">
+      <div class="loading-card">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Launching VRCAssetManager...</div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

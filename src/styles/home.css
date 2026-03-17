@@ -1,0 +1,129 @@
+.home-page {
+  padding: 0;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 100px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-btn:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  background: var(--glass-bg);
+}
+
+.category-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* Category Badge in Details */
+.category-badge {
+  display: inline-flex;
+  padding: 0.35rem 0.875rem;
+  background: var(--primary-glow);
+  border: 1px solid var(--primary);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+/* File Row in Forms */
+.file-row {
+  padding: 1.5rem;
+  background: var(--bg-main);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s;
+}
+
+.file-row:hover {
+  border-color: var(--primary);
+}
+
+.avatar-links > label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-link-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-link-row select,
+.avatar-link-row input {
+  font-size: 0.875rem;
+  background: var(--bg-surface) !important;
+}
+
+/* Tags in list */
+.tag {
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.avatar-tag {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.resource-tag {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--secondary);
+  color: var(--secondary);
+}
+
+/* Modal Footer */
+.modal-footer-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+/* File Picker UI */
+.native-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-name-display {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
