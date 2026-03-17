@@ -141,7 +141,7 @@ function Layout({ children }) {
                 <span className="icon"><HomeIcon size={18} /></span> All Assets
               </button>
               <button
-                className={`cat-btn ${location.search.includes('category=Avatar') ? 'active' : ''}`}
+                className={`cat-btn ${(location.search.includes('category=Avatar') || location.pathname === '/avatar') ? 'active' : ''}`}
                 onClick={() => navigateToHome('Avatar')}
               >
                 <span className="icon"><Users size={18} /></span> Avatar

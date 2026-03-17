@@ -55,6 +55,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    text-decoration: none;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
 }
 
 body {
@@ -269,6 +275,27 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+}
+
+.content-header.centered {
+    position: relative;
+}
+
+.header-center-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    white-space: nowrap;
+}
+
+.header-right-placeholder {
+    width: 160px; /* Mirror for back button area balance */
 }
 
 .search-bar {
@@ -437,11 +464,13 @@ body {
     transition: all 0.2s;
     font-size: 0.875rem;
     font-family: inherit;
+    text-decoration: none;
 }
 
 .secondary-btn:hover {
     background: var(--glass-hover);
     border-color: var(--text-secondary);
+    text-decoration: none;
 }
 
 .secondary-btn.disabled {
@@ -1117,10 +1146,53 @@ select.glass-select:hover {
     display: flex;
     gap: 8px;
     z-index: 10;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 8px 16px;
     border-radius: 20px;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.carousel-counter {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    z-index: 10;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.image-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    z-index: 5;
+    transition: opacity 0.3s ease;
+}
+
+.detail-img.loading {
+    filter: blur(10px) brightness(0.7);
+}
+
+.detail-img.loaded {
+    filter: none;
+    transition: filter 0.5s ease;
 }
 
 .dot {

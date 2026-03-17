@@ -221,11 +221,16 @@
 }
 
 .files-grid .file-category {
-  padding: 2px 8px;
-  background: rgba(142, 68, 173, 0.2);
+  padding: 4px 10px;
+  background: rgba(142, 68, 173, 0.15);
   border: 1px solid rgba(142, 68, 173, 0.3);
-  border-radius: 10px;
-  color: #8e44ad;
+  border-radius: 20px;
+  color: #a55eea;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .files-grid .file-size,
@@ -303,12 +308,17 @@
 }
 
 .files-list .file-category {
-  padding: 1px 6px;
-  background: rgba(142, 68, 173, 0.2);
+  padding: 2px 8px;
+  background: rgba(142, 68, 173, 0.15);
   border: 1px solid rgba(142, 68, 173, 0.3);
-  border-radius: 8px;
-  color: #8e44ad;
-  font-size: 0.65rem;
+  border-radius: 20px;
+  color: #a55eea;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.7rem;
 }
 
 .files-list .file-size,
@@ -379,7 +389,7 @@
   }
 
   .files-list .file-meta {
-    flex-direction: column;
-    gap: 0.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 }

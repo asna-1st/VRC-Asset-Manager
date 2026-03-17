@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   User, 
@@ -18,6 +18,7 @@ import '../styles/avatar.css';
 function Avatar() {
   const { avatarStates, updateAvatarState } = useView();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const avatarId = searchParams.get('id');
   
   const savedState = avatarStates[avatarId] || {};
@@ -177,16 +178,17 @@ function Avatar() {
 
   return (
     <>
-      <header className="content-header">
-        <Link to="/" className="secondary-btn">
-          <ArrowLeft size={16} style={{ marginRight: '8px' }} /> Back to Library
-        </Link>
-        <div className="search-bar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{avatar.name}</h1>
-            <span className="category-badge" style={{ marginBottom: 0 }}>{avatar.category}</span>
-          </div>
+      <header className="content-header centered">
+        <div className="header-left">
+          <button className="secondary-btn" onClick={() => navigate(-1)}>
+            <ArrowLeft size={16} style={{ marginRight: '8px' }} /> Back to Library
+          </button>
         </div>
+        <div className="header-center-title">
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{avatar.name}</h1>
+          <span className="category-badge" style={{ marginBottom: 0 }}>{avatar.category}</span>
+        </div>
+        <div className="header-right-placeholder"></div>
       </header>
 
       <div className="content-body">

@@ -14,8 +14,16 @@ const AssetDetailModal = ({
   handleOpenFile
 }) => {
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Reset loading state when index changes
+  React.useEffect(() => {
+    setImageLoading(true);
+  }, [carouselIndex]);
 
   if (!show || !asset) return null;
+
+  const totalImages = asset.gallery?.length || 0;
 
   return (
     <div className="modal show" onClick={onClose}>
@@ -38,33 +46,25 @@ const AssetDetailModal = ({
               </div>
             )}
 
-            {/* Commented out video preview
-            {asset.video_url && carouselIndex === (asset.gallery?.length || 0) ? (
-              <div className="video-wrapper">
-                <iframe
-                  title="Asset Video"
-                  src={getEmbedUrl(asset.video_url)}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="detail-video"
-                />
+            {imageLoading && (
+              <div className="image-loading-overlay">
+                <Loader2 className="spinning" size={32} />
               </div>
-            ) : ( */}
+            )}
+
             <img
               src={(asset.gallery && asset.gallery[carouselIndex]) || asset.thumbnail_url || 'https://sampleimg.com/600x600?text=No+Image'}
-              className="detail-img"
+              className={`detail-img ${imageLoading ? 'loading' : 'loaded'}`}
               alt={`${asset.name} - ${carouselIndex + 1}`}
+              onLoad={() => setImageLoading(false)}
             />
-            {/* )} */}
 
-            {(asset.gallery?.length > 1 /* || asset.video_url */) && (
+            {totalImages > 1 && (
               <>
                 <button
                   className="carousel-control prev"
                   onClick={() => {
-                    const total = (asset.gallery?.length || 0) /* + (asset.video_url ? 1 : 0) */;
-                    setCarouselIndex(prev => (prev === 0 ? total - 1 : prev - 1));
+                    setCarouselIndex(prev => (prev === 0 ? totalImages - 1 : prev - 1));
                   }}
                 >
                   <ChevronLeft size={24} />
@@ -72,30 +72,27 @@ const AssetDetailModal = ({
                 <button
                   className="carousel-control next"
                   onClick={() => {
-                    const total = (asset.gallery?.length || 0) /* + (asset.video_url ? 1 : 0) */;
-                    setCarouselIndex(prev => (prev >= total - 1 ? 0 : prev + 1));
+                    setCarouselIndex(prev => (prev >= totalImages - 1 ? 0 : prev + 1));
                   }}
                 >
                   <ChevronRight size={24} />
                 </button>
 
-                <div className="carousel-dots">
-                  {asset.gallery?.map((_, i) => (
-                    <span
-                      key={i}
-                      className={`dot ${carouselIndex === i ? 'active' : ''}`}
-                      onClick={() => setCarouselIndex(i)}
-                    />
-                  ))}
-                  {/* {asset.video_url && (
-                    <span
-                      className={`dot video-dot ${carouselIndex === (asset.gallery?.length || 0) ? 'active' : ''}`}
-                      onClick={() => setCarouselIndex(asset.gallery?.length || 0)}
-                    >
-                      <Play size={10} />
-                    </span>
-                  )} */}
-                </div>
+                {totalImages > 10 ? (
+                  <div className="carousel-counter">
+                    {carouselIndex + 1} / {totalImages}
+                  </div>
+                ) : (
+                  <div className="carousel-dots">
+                    {asset.gallery?.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`dot ${carouselIndex === i ? 'active' : ''}`}
+                        onClick={() => setCarouselIndex(i)}
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

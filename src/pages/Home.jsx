@@ -84,6 +84,7 @@ function Home() {
   });
   const [transferPromptOpen, setTransferPromptOpen] = useState(false);
   const transferPendingRef = useRef(null);
+  const { invalidateFileManager } = useView();
 
   const contentRef = useRef(null);
   const observerRef = useRef(null);
@@ -634,6 +635,7 @@ function Home() {
       }
 
       setShowModal(false);
+      invalidateFileManager();
       fetchAssets(true, true);
     } catch (err) {
       setFormErrors([`Error saving asset: ${err.message}`]);
@@ -651,6 +653,7 @@ function Home() {
         try {
           await api.deleteAsset(id);
           setShowDetailModal(false);
+          invalidateFileManager();
           fetchAssets(true, true);
         } catch (err) {
           console.error('Error deleting asset:', err);

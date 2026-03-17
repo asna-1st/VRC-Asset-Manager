@@ -47,12 +47,17 @@ export const ViewProvider = ({ children }) => {
     return scrollPositions.current[path] || 0;
   };
 
+  const invalidateFileManager = () => {
+    setFileManagerState(prev => ({ ...prev, files: [] }));
+  };
+
   return (
     <ViewContext.Provider value={{ 
       homeState, 
       updateHomeState, 
       fileManagerState,
       updateFileManagerState,
+      invalidateFileManager,
       avatarStates,
       updateAvatarState,
       saveScroll, 
