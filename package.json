@@ -1,6 +1,6 @@
 {
   "name": "vrc-asset-manager",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "VRChat Asset Manager Desktop Application",
   "main": "main.js",
   "author": "asna",
