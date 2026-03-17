@@ -13,11 +13,13 @@
     "react:build": "vite build",
     "build": "pnpm react:build && electron-builder",
     "build:portable": "pnpm react:build && electron-builder --win portable",
+    "build:zip": "pnpm react:build && electron-builder --win zip",
     "build:win": "pnpm react:build && electron-builder --win",
     "build:mac": "pnpm react:build && electron-builder --mac",
     "build:linux": "pnpm react:build && electron-builder --linux",
     "pack": "electron-builder --dir",
-    "dist": "pnpm react:build && electron-builder"
+    "dist": "pnpm react:build && electron-builder",
+    "release": "pnpm react:build && electron-builder --win zip nsis portable"
   },
   "build": {
     "appId": "com.asna.vrcassetmanager",
@@ -40,7 +42,7 @@
         "to": "public"
       }
     ],
-    "artifactName": "VRC-Asset-Manager-${version}.${ext}",
+    "artifactName": "VRC-Asset-Manager-${version}-${os}-${arch}.${ext}",
     "copyright": "Copyright © 2026 asna",
     "win": {
       "target": [
@@ -52,6 +54,12 @@
         },
         {
           "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "x64"
           ]

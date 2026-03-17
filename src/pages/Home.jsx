@@ -286,6 +286,7 @@ function Home() {
   }, []);
 
   const openAddModal = () => {
+    fetchAvatars();
     setEditingAsset(null);
     setFormData({
       name: '',
@@ -303,6 +304,7 @@ function Home() {
   };
 
   const openEditModal = (asset) => {
+    fetchAvatars();
     setEditingAsset(asset);
     setFormData({
       name: asset.name,
@@ -612,6 +614,7 @@ function Home() {
       if (editingAsset) {
         data.id = editingAsset.id;
         await api.updateAsset(data);
+        fetchAvatars();
 
         // Update metadata for existing files
         for (const file of existingFiles) {
@@ -627,6 +630,7 @@ function Home() {
         }
       } else {
         await api.createAsset(data);
+        fetchAvatars();
       }
 
       setShowModal(false);
