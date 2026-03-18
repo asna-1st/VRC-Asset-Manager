@@ -5,7 +5,8 @@ import {
   Search,
   Filter,
   Plus,
-  LayoutGrid
+  LayoutGrid,
+  ChevronDown
 } from 'lucide-react';
 import api from '../services/api';
 import { useView } from '../context/ViewContext';
@@ -51,6 +52,7 @@ function Home() {
   const [currentCategory, setCurrentCategory] = useState(homeState.category);
   const [searchQuery, setSearchQuery] = useState(homeState.search);
   const [searchInput, setSearchInput] = useState(homeState.search);
+  const [sortMode, setSortMode] = useState(homeState.sortMode || 'newest');
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(homeState.hasMore);
   const [offset, setOffset] = useState(homeState.offset);
@@ -60,6 +62,7 @@ function Home() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [editingAsset, setEditingAsset] = useState(null);
   const [availableAvatars, setAvailableAvatars] = useState([]);
+  const [missingAvatars, setMissingAvatars] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     category: 'Avatar',
@@ -124,9 +127,9 @@ function Home() {
       isInitialMount.current = false;
       return;
     }
-    console.log('Home: Category or Search changed, resetting list');
+    console.log('Home: Category, Search or Sort changed, resetting list');
     fetchAssets(true);
-  }, [currentCategory, searchQuery]);
+  }, [currentCategory, searchQuery, sortMode]);
 
   // Debounce search input to avoid spamming IPC
   useEffect(() => {
@@ -170,6 +173,15 @@ function Home() {
     }
   };
 
+  const fetchMissingAvatars = async () => {
+    try {
+      const data = await api.getMissingAvatars();
+      setMissingAvatars(data);
+    } catch (err) {
+      console.error('Error fetching missing avatars:', err);
+    }
+  };
+
   const fetchAssets = async (reset = false, force = false) => {
     if (fetchInFlightRef.current || (!hasMore && !reset)) {
       return;
@@ -180,6 +192,7 @@ function Home() {
       const params = {
         limit: LIMIT,
         offset: newOffset,
+        sort: sortMode
       };
 
       if (currentCategory !== 'All') {
@@ -210,7 +223,8 @@ function Home() {
           offset: data.length,
           hasMore: data.length === LIMIT,
           category: currentCategory,
-          search: searchQuery
+          search: searchQuery,
+          sortMode: sortMode
         });
       } else {
         const merged = [...assets, ...data];
@@ -288,6 +302,7 @@ function Home() {
 
   const openAddModal = () => {
     fetchAvatars();
+    fetchMissingAvatars();
     setEditingAsset(null);
     setFormData({
       name: '',
@@ -306,6 +321,7 @@ function Home() {
 
   const openEditModal = (asset) => {
     fetchAvatars();
+    fetchMissingAvatars();
     setEditingAsset(asset);
     setFormData({
       name: asset.name,
@@ -632,6 +648,7 @@ function Home() {
       } else {
         await api.createAsset(data);
         fetchAvatars();
+        fetchMissingAvatars();
       }
 
       setShowModal(false);
@@ -706,6 +723,33 @@ function Home() {
             onChange={handleSearch}
           />
         </div>
+
+        <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="sort-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <select
+              value={sortMode}
+              onChange={(e) => {
+                setSortMode(e.target.value);
+                setOffset(0);
+                setHasMore(true);
+              }}
+              className="glass-select"
+              style={{
+                padding: '0.6rem 2.5rem 0.6rem 1rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                borderRadius: '12px',
+                width: 'auto',
+                minWidth: '150px'
+              }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="az">Name (A-Z)</option>
+              <option value="za">Name (Z-A)</option>
+            </select>
+          </div>
+        </div>
       </header>
 
       <div className="content-body" ref={contentRef}>
@@ -769,6 +813,7 @@ function Home() {
         handleFileAdd={handleFileAdd}
         formErrors={formErrors}
         promptTransferMode={promptTransferMode}
+        missingAvatars={missingAvatars}
       />
 
       <ConfirmDialog

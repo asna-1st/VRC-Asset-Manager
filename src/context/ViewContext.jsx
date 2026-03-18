@@ -8,7 +8,8 @@ export const ViewProvider = ({ children }) => {
     offset: 0,
     hasMore: true,
     category: 'All',
-    search: ''
+    search: '',
+    sortMode: 'newest'
   });
 
   const [avatarStates, setAvatarStates] = useState({}); // id -> { avatar, assets, offset, hasMore }

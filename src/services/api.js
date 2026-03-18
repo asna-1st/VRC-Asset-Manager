@@ -59,6 +59,10 @@ class ApiService {
     return window.electronAPI.getAvatars();
   }
 
+  async getMissingAvatars() {
+    return window.electronAPI.getMissingAvatars();
+  }
+
   async getAvatarAssets(id, params = {}) {
     return window.electronAPI.getAvatarAssets({ id, ...params });
   }

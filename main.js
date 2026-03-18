@@ -244,6 +244,17 @@ function dbExec(sql) {
     db.exec(sql);
 }
 
+// Auto-link assets to a new avatar
+function autoLinkAvatars(avatarName, avatarId) {
+    if (!avatarName || !avatarId) return;
+    
+    console.log(`Auto-linking assets to avatar: ${avatarName} (ID: ${avatarId})`);
+    dbRun(
+        'UPDATE file_links SET target_asset_id = ?, manual_name = NULL WHERE LOWER(manual_name) = LOWER(?) AND target_asset_id IS NULL',
+        [avatarId, avatarName]
+    );
+}
+
 // Utility for notifications (disabled - use in-app only)
 function showAppNotification(title, body, type = 'info') {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -516,7 +527,13 @@ ipcMain.handle('get-assets', async (event, params) => {
             query += ' WHERE ' + conditions.join(' AND ');
         }
 
-        query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+        const sort = safeParams.sort || 'newest';
+        let orderBy = 'id DESC'; // newest
+        if (sort === 'oldest') orderBy = 'id ASC';
+        else if (sort === 'az') orderBy = 'LOWER(name) ASC';
+        else if (sort === 'za') orderBy = 'LOWER(name) DESC';
+
+        query += ` ORDER BY ${orderBy} LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), parseInt(offset));
 
         const assets = dbAll(query, params);
@@ -551,6 +568,22 @@ ipcMain.handle('get-avatars', () => {
         return avatars;
     } catch (err) {
         console.error('Error getting avatars:', err);
+        throw err;
+    }
+});
+
+// Get missing avatar names (manual links not associated with an asset)
+ipcMain.handle('get-missing-avatars', () => {
+    try {
+        const missing = dbAll(`
+            SELECT DISTINCT manual_name 
+            FROM file_links 
+            WHERE target_asset_id IS NULL AND manual_name IS NOT NULL 
+            ORDER BY manual_name ASC
+        `);
+        return missing.map(m => m.manual_name);
+    } catch (err) {
+        console.error('Error getting missing avatars:', err);
         throw err;
     }
 });
@@ -625,6 +658,11 @@ ipcMain.handle('create-asset', async (event, { name, category, thumbnail_url, bo
         }
 
         dbExec('COMMIT');
+
+        // If this is an avatar, auto-link any manual entries
+        if (category === 'Avatar') {
+            autoLinkAvatars(name, assetId);
+        }
 
         showAppNotification('Asset Created', `Successfully created asset: ${name}`);
 
@@ -709,6 +747,12 @@ ipcMain.handle('update-asset', async (event, { id, name, category, thumbnail_url
         }
 
         dbExec('COMMIT');
+
+        // If this was an avatar update, re-run auto-link in case the name changed
+        if (category === 'Avatar') {
+            autoLinkAvatars(name, id);
+        }
+
         showAppNotification('Asset Updated', `Successfully updated asset: ${name}`);
         return { message: 'Asset updated successfully' };
     } catch (err) {
@@ -797,25 +841,34 @@ ipcMain.handle('open-file', async (event, file_path) => {
 });
 
 // Get assets linked to a specific avatar
-ipcMain.handle('get-avatar-assets', async (event, { id, limit = 50, offset = 0 }) => {
+ipcMain.handle('get-avatar-assets', async (event, { id, category, sort, limit = 50, offset = 0 }) => {
     try {
+        const assetId = parseInt(id);
         // Get the avatar info
-        const avatar = dbGet('SELECT * FROM assets WHERE id = ? AND category = ?', [id, 'Avatar']);
+        const avatar = dbGet('SELECT * FROM assets WHERE id = ? AND category = ?', [assetId, 'Avatar']);
         if (!avatar) {
             throw new Error('Avatar not found');
         }
 
-        // Get all files linked to this avatar
-        const linkedFiles = dbAll(`
-            SELECT DISTINCT af.asset_id 
+        // Base query to find linked assets
+        let countQuery = `
+            SELECT COUNT(DISTINCT af.asset_id) as total
             FROM file_links fl
             JOIN asset_files af ON fl.file_id = af.id
+            JOIN assets a ON af.asset_id = a.id
             WHERE fl.target_asset_id = ?
-        `, [id]);
+        `;
+        const countParams = [assetId];
 
-        const assetIds = linkedFiles.map(f => f.asset_id);
+        if (category && category !== 'All') {
+            countQuery += ' AND a.category = ?';
+            countParams.push(category);
+        }
 
-        if (assetIds.length === 0) {
+        const totalResult = dbGet(countQuery, countParams);
+        const total = totalResult ? totalResult.total : 0;
+
+        if (total === 0) {
             return {
                 avatar,
                 assets: [],
@@ -823,14 +876,30 @@ ipcMain.handle('get-avatar-assets', async (event, { id, limit = 50, offset = 0 }
             };
         }
 
-        // Get assets with those IDs
-        const placeholders = assetIds.map(() => '?').join(',');
-        const assets = dbAll(`
-            SELECT * FROM assets 
-            WHERE id IN (${placeholders})
-            ORDER BY id DESC
-            LIMIT ? OFFSET ?
-        `, [...assetIds, parseInt(limit), parseInt(offset)]);
+        // Get assets with sorting and filtering
+        let orderClause = 'a.id DESC';
+        if (sort === 'oldest') orderClause = 'a.id ASC';
+        else if (sort === 'az') orderClause = 'LOWER(a.name) ASC';
+        else if (sort === 'za') orderClause = 'LOWER(a.name) DESC';
+
+        let assetsQuery = `
+            SELECT DISTINCT a.*
+            FROM assets a
+            JOIN asset_files af ON a.id = af.asset_id
+            JOIN file_links fl ON af.id = fl.file_id
+            WHERE fl.target_asset_id = ?
+        `;
+        const assetsParams = [assetId];
+
+        if (category && category !== 'All') {
+            assetsQuery += ' AND a.category = ?';
+            assetsParams.push(category);
+        }
+
+        assetsQuery += ` ORDER BY ${orderClause} LIMIT ? OFFSET ?`;
+        assetsParams.push(parseInt(limit), parseInt(offset));
+
+        const assets = dbAll(assetsQuery, assetsParams);
 
         // Get files for each asset
         const assetsWithFiles = assets.map((asset) => {
@@ -850,7 +919,7 @@ ipcMain.handle('get-avatar-assets', async (event, { id, limit = 50, offset = 0 }
         return {
             avatar,
             assets: assetsWithFiles,
-            total: assetIds.length
+            total
         };
     } catch (err) {
         console.error('Error getting avatar assets:', err);

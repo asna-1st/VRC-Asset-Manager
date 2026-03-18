@@ -19,7 +19,15 @@
     "build:linux": "pnpm react:build && electron-builder --linux",
     "pack": "electron-builder --dir",
     "dist": "pnpm react:build && electron-builder",
-    "release": "pnpm react:build && electron-builder --win zip nsis portable"
+    "release": "pnpm react:build && electron-builder --win zip",
+    "bump:patch": "pnpm version patch",
+    "bump:minor": "pnpm version minor",
+    "bump:major": "pnpm version major",
+    "postversion": "git push && git push --tags",
+    "publish": "pnpm run publish:patch",
+    "publish:patch": "pnpm run bump:patch && pnpm run release",
+    "publish:minor": "pnpm run bump:minor && pnpm run release",
+    "publish:major": "pnpm run bump:major && pnpm run release"
   },
   "build": {
     "appId": "com.asna.vrcassetmanager",

@@ -15,6 +15,8 @@ import api from '../services/api';
 import { useView } from '../context/ViewContext';
 import '../styles/avatar.css';
 
+const CATEGORIES = ['All', 'Outfit', 'Accessory', 'Texture', 'Hair', 'Miscellaneous'];
+
 function Avatar() {
   const { avatarStates, updateAvatarState } = useView();
   const [searchParams] = useSearchParams();
@@ -30,6 +32,8 @@ function Avatar() {
   const [offset, setOffset] = useState(savedState.offset || 0);
   const [hasMore, setHasMore] = useState(savedState.hasMore !== undefined ? savedState.hasMore : true);
   const [viewMode, setViewMode] = useState(savedState.viewMode || 'list');
+  const [currentCategory, setCurrentCategory] = useState(savedState.category || 'All');
+  const [sortMode, setSortMode] = useState(savedState.sort || 'newest');
   const limit = 50;
 
   const observerRef = useRef(null);
@@ -46,13 +50,11 @@ function Avatar() {
   }, [assets, hasMore, loading]);
 
   useEffect(() => {
-    if (avatarId && assets.length === 0) {
-      console.log(`Avatar: No assets for ${avatarId}, fetching initial set`);
+    if (avatarId) {
+      console.log(`Avatar: Fetching assets for ${avatarId}`);
       fetchAvatarAssets(true);
-    } else if (avatarId) {
-      console.log(`Avatar: Preserving ${assets.length} assets for ${avatarId}`);
     }
-  }, [avatarId]);
+  }, [avatarId, currentCategory, sortMode]);
 
   const fetchAvatarAssets = async (reset = false) => {
     if (!avatarId) return;
@@ -64,6 +66,8 @@ function Avatar() {
       const data = await api.getAvatarAssets(avatarId, {
         limit,
         offset: newOffset,
+        category: currentCategory,
+        sort: sortMode
       });
       
       setAvatar(data.avatar);
@@ -77,7 +81,9 @@ function Avatar() {
           assets: data.assets, 
           total: data.total, 
           offset: data.assets.length, 
-          hasMore: data.assets.length === limit 
+          hasMore: data.assets.length === limit,
+          category: currentCategory,
+          sort: sortMode
         });
       } else {
         const newAssets = [...assets, ...data.assets];
@@ -87,7 +93,9 @@ function Avatar() {
         updateAvatarState(avatarId, { 
           assets: newAssets, 
           offset: newOffset, 
-          hasMore: data.assets.length === limit 
+          hasMore: data.assets.length === limit,
+          category: currentCategory,
+          sort: sortMode
         });
       }
       
@@ -213,6 +221,50 @@ function Avatar() {
             </div>
           </div>
         </div>
+
+        <div className="filter-sort-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1rem', flexWrap: 'wrap' }}>
+          <div className="category-tabs" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', flex: 1 }}>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat}
+                className={`secondary-btn small ${currentCategory === cat ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentCategory(cat);
+                  setOffset(0);
+                  setHasMore(true);
+                }}
+                style={currentCategory === cat ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' } : {}}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="sort-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <select
+              value={sortMode}
+              onChange={(e) => {
+                setSortMode(e.target.value);
+                setOffset(0);
+                setHasMore(true);
+              }}
+              className="glass-select"
+              style={{
+                padding: '0.5rem 2.5rem 0.5rem 1rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                borderRadius: '10px',
+                width: 'auto',
+                minWidth: '140px'
+              }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="az">Name (A-Z)</option>
+              <option value="za">Name (Z-A)</option>
+            </select>
+          </div>
+        </div>
         
         {assets.length === 0 ? (
           <div className="empty-state">
@@ -230,7 +282,7 @@ function Avatar() {
                   <div className="asset-header">
                     <img
                       src={asset.thumbnail_url || 'https://sampleimg.com/100x100?text=No+Image'}
-                      className="asset-thumbnail"
+                      className={`asset-thumbnail ${asset.nsfw ? 'nsfw-blur' : ''}`}
                       alt={asset.name}
                     />
                     <div className="asset-info">

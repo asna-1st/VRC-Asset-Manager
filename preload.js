@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getTargets: () => ipcRenderer.invoke('get-targets'),
     getAssets: (params) => ipcRenderer.invoke('get-assets', params),
     getAvatars: () => ipcRenderer.invoke('get-avatars'),
+    getMissingAvatars: () => ipcRenderer.invoke('get-missing-avatars'),
     createAsset: (data) => ipcRenderer.invoke('create-asset', data),
     updateAsset: (data) => ipcRenderer.invoke('update-asset', data),
     deleteAsset: (id) => ipcRenderer.invoke('delete-asset', id),
