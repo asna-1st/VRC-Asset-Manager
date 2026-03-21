@@ -115,7 +115,7 @@ const AssetDetailModal = ({
                 onClick={() => api.openExternal(asset.booth_link)}
                 className="primary-btn"
               >
-                Visit Booth.pm <ExternalLink size={14} style={{ marginLeft: '6px' }} />
+                Visit <ExternalLink size={14} style={{ marginLeft: '6px' }} />
               </button>
             )}
             {asset.category === 'Avatar' && (

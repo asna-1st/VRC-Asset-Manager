@@ -79,12 +79,12 @@ const AssetFormModal = ({
             {formData.category === 'Avatar' && missingAvatars.length > 0 && (
               <div className="form-group" style={{ marginTop: '-0.5rem', marginBottom: '1rem' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Suggestions from missing links
+                  Suggestions from missing avatars
                 </span>
-                <div style={{ 
-                  display: 'flex', 
-                  flexWrap: 'wrap', 
-                  gap: '0.4rem', 
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.4rem',
                   marginTop: '0.4rem',
                   maxHeight: '120px',
                   overflowY: 'auto',
@@ -96,9 +96,9 @@ const AssetFormModal = ({
                       type="button"
                       className="secondary-btn small"
                       onClick={() => handleFormChange({ target: { name: 'name', value: name } })}
-                      style={{ 
-                        fontSize: '0.75rem', 
-                        padding: '4px 10px', 
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '4px 10px',
                         background: 'rgba(99, 102, 241, 0.1)',
                         border: '1px solid rgba(99, 102, 241, 0.2)',
                         borderRadius: '6px',
@@ -128,7 +128,7 @@ const AssetFormModal = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="booth_link">Booth.pm Link</label>
+              <label htmlFor="booth_link">Link</label>
               <input
                 type="url"
                 id="booth_link"

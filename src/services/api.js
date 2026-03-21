@@ -11,6 +11,14 @@ class ApiService {
     return window.electronAPI.openExternal(url);
   }
 
+  async getAppVersion() {
+    return window.electronAPI.getAppVersion();
+  }
+
+  async getLatestVersion() {
+    return window.electronAPI.getLatestVersion();
+  }
+
   // Assets
   async getAssets(params = {}) {
     console.log('ApiService: getAssets called with', params);

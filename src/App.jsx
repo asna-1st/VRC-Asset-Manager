@@ -24,7 +24,30 @@ function App() {
       .finally(() => {
         if (mounted) setChecking(false);
       });
-    return () => { mounted = false; };
+
+    // Check for updates after a short delay
+    const checkUpdates = async () => {
+      try {
+        const current = await api.getAppVersion();
+        const latest = await api.getLatestVersion();
+        if (latest && current !== latest.tag) {
+          api.notify({
+            title: 'New Update Available',
+            body: `Version v${latest.tag} is now available. Go to Settings to download!`,
+            type: 'info'
+          });
+        }
+      } catch (err) {
+        console.error('Update check failed:', err);
+      }
+    };
+    
+    const updateTimer = setTimeout(checkUpdates, 2500);
+
+    return () => { 
+      mounted = false; 
+      clearTimeout(updateTimer);
+    };
   }, []);
 
   const handleSetupComplete = async () => {

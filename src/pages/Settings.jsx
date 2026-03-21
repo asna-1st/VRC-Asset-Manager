@@ -118,6 +118,7 @@ const MigrationModal = ({ isOpen, onConfirm, onCancel, targetPath }) => {
 
 function Settings() {
   const [config, setConfig] = useState(null);
+  const [version, setVersion] = useState({ current: '', latest: null });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [migrationData, setMigrationData] = useState({ isOpen: false, targetPath: null });
@@ -130,8 +131,13 @@ function Settings() {
     try {
       const data = await api.getConfig();
       setConfig(data);
+
+      // Also fetch versions
+      const current = await api.getAppVersion();
+      const latestData = await api.getLatestVersion();
+      setVersion({ current, latest: latestData });
     } catch (err) {
-      console.error('Error fetching config:', err);
+      console.error('Error fetching config/versions:', err);
     } finally {
       setLoading(false);
     }
@@ -302,10 +308,40 @@ function Settings() {
           </div>
           <div className="section-content">
             <div className="about-branding">
-              <div className="logo-mini">Booth<span>Assets</span></div>
-              <p>Version 1.0.0 (Desktop)</p>
+              <div className="logo-mini" style={{ marginBottom: '0.75rem' }}>VRC Asset Manager</div>
+              <p style={{ margin: 0, opacity: 0.8 }}>Current Version: <strong>{version.current}</strong></p>
+              
+              {version.latest && (
+                <>
+                  <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
+                    Latest Release: <strong style={{ color: 'var(--text)' }}>v{version.latest.tag}</strong>
+                    {version.current !== version.latest.tag && (
+                      <span style={{ 
+                        marginLeft: '0.75rem', 
+                        background: 'var(--primary)', 
+                        color: 'white', 
+                        padding: '2px 8px', 
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        boxShadow: '0 0 10px var(--primary-glow)'
+                      }}>UPDATE AVAILABLE</span>
+                    )}
+                  </p>
+                  
+                  {version.current !== version.latest.tag && (
+                    <button 
+                      className="primary-btn"
+                      onClick={() => api.openExternal(version.latest.url)}
+                      style={{ marginTop: '0.75rem', width: 'auto', padding: '0.4rem 1.2rem', fontSize: '0.85rem' }}
+                    >
+                      Download & Update
+                    </button>
+                  )}
+                </>
+              )}
             </div>
-            <div className="about-links">
+            <div className="about-links" style={{ marginTop: '1rem' }}>
               <a
                 href="https://github.com/asna-1st/VRC-Asset-Manager"
                 className="link-item"

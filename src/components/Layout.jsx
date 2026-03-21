@@ -75,8 +75,9 @@ function Layout({ children }) {
           document.documentElement.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
           document.documentElement.style.setProperty('--primary-glow', `rgba(${r}, ${g}, ${b}, 0.3)`);
         }
+
       } catch (err) {
-        console.error('Failed to load initial config:', err);
+        console.error('Failed to load initial app data:', err);
       }
     };
     initApp();

@@ -309,6 +309,21 @@ ipcMain.handle('open-external', async (event, url) => {
     await shell.openExternal(url);
 });
 
+ipcMain.handle('get-latest-version', async () => {
+    try {
+        const response = await fetch('https://api.github.com/repos/asna-1st/VRC-Asset-Manager/releases/latest');
+        if (!response.ok) throw new Error('GitHub API request failed');
+        const data = await response.json();
+        return {
+            tag: data.tag_name.replace(/^v/, ''),
+            url: data.html_url
+        };
+    } catch (err) {
+        console.error('Error fetching latest version:', err);
+        return null;
+    }
+});
+
 ipcMain.handle('select-file', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
