@@ -20,17 +20,65 @@ process.on('unhandledRejection', (reason, promise) => {
 let mainWindow;
 let db;
 
+// Determination of portable mode
+const appPath = app.isPackaged ? path.dirname(process.execPath) : __dirname;
+const portableIniPath = path.join(appPath, 'portable.ini');
+const isPortable = fs.existsSync(portableIniPath);
+
+let portableAssetsRelativePath = 'assets';
+if (isPortable) {
+    // Specify a dedicated folder for userData to keep the root clean
+    const userDataPath = path.join(appPath, 'data');
+    if (!fs.existsSync(userDataPath)) {
+        fs.mkdirSync(userDataPath, { recursive: true });
+
+        // Migrate existing config.json if found in root
+        const oldConfigPath = path.join(appPath, 'config.json');
+        if (fs.existsSync(oldConfigPath)) {
+            try {
+                fs.renameSync(oldConfigPath, path.join(userDataPath, 'config.json'));
+            } catch (err) {
+                console.error('Migration of config.json failed:', err);
+            }
+        }
+    }
+    app.setPath('userData', userDataPath);
+    
+    // Read relative path from portable.ini
+    try {
+        const iniContent = fs.readFileSync(portableIniPath, 'utf8').trim();
+        if (iniContent) {
+            portableAssetsRelativePath = iniContent;
+        } else {
+            // If empty, write default back
+            fs.writeFileSync(portableIniPath, portableAssetsRelativePath);
+        }
+    } catch (err) {
+        console.error('Error reading portable.ini:', err);
+    }
+}
+
 // App configuration management
 const configPath = path.join(app.getPath('userData'), 'config.json');
-const defaultAssetsPath = path.join(app.getPath('userData'), 'assets');
+const defaultAssetsPath = isPortable ? path.join(appPath, portableAssetsRelativePath) : path.join(app.getPath('userData'), 'assets');
 const defaultDbPath = path.join(defaultAssetsPath, 'assets.db');
+
+// Ensure assets directory exists in portable mode
+if (isPortable && !fs.existsSync(defaultAssetsPath)) {
+    try {
+        fs.mkdirSync(defaultAssetsPath, { recursive: true });
+        console.log('Auto-generated assets folder at:', defaultAssetsPath);
+    } catch (err) {
+        console.error('Failed to auto-generate assets folder:', err);
+    }
+}
 
 let config = {
     assetsPath: defaultAssetsPath,
     dbPath: defaultDbPath,
     theme: 'dark',
     accentColor: '#6366f1',
-    firstRun: true
+    firstRun: !isPortable // Skip setup in portable mode
 };
 
 function normalizeConfigPaths() {
@@ -41,10 +89,10 @@ function normalizeConfigPaths() {
         config.dbPath = defaultDbPath;
     }
     if (!path.isAbsolute(config.assetsPath)) {
-        config.assetsPath = path.join(app.getPath('userData'), config.assetsPath);
+        config.assetsPath = path.isAbsolute(config.assetsPath) ? config.assetsPath : path.join(isPortable ? appPath : app.getPath('userData'), config.assetsPath);
     }
     if (!path.isAbsolute(config.dbPath)) {
-        config.dbPath = path.join(app.getPath('userData'), config.dbPath);
+        config.dbPath = path.isAbsolute(config.dbPath) ? config.dbPath : path.join(isPortable ? appPath : app.getPath('userData'), config.dbPath);
     }
 
     const dbDir = path.dirname(config.dbPath);
@@ -72,10 +120,10 @@ function loadConfig() {
             console.error('Failed to load config:', err);
         }
     } else {
-        config.firstRun = true;
+        config.firstRun = !isPortable;
         normalizeConfigPaths();
         saveConfig();
-        console.log('Default configuration saved');
+        console.log('Default configuration saved (Portable:', isPortable, ')');
     }
 }
 
@@ -449,6 +497,15 @@ ipcMain.handle('change-assets-location', async (event, { newPath, mode }) => {
             config.dbPath = newDbPath;
             saveConfig();
             
+            if (isPortable) {
+                const relativePath = path.relative(appPath, newAssetsPath);
+                if (!relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+                    fs.writeFileSync(portableIniPath, relativePath);
+                } else {
+                    fs.writeFileSync(portableIniPath, newAssetsPath);
+                }
+            }
+            
             initializeDatabase();
             
             showAppNotification('Migration Complete', 'Your library has been successfully moved.');
@@ -466,6 +523,15 @@ ipcMain.handle('change-assets-location', async (event, { newPath, mode }) => {
             config.dbPath = newDbPath;
             saveConfig();
             
+            if (isPortable) {
+                const relativePath = path.relative(appPath, newAssetsPath);
+                if (!relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+                    fs.writeFileSync(portableIniPath, relativePath);
+                } else {
+                    fs.writeFileSync(portableIniPath, newAssetsPath);
+                }
+            }
+            
             initializeDatabase();
             
             showAppNotification('Storage Updated', 'Application is now using a new storage location.');
@@ -475,6 +541,100 @@ ipcMain.handle('change-assets-location', async (event, { newPath, mode }) => {
         console.error('Migration failed:', err);
         // Try to recover if possible (re-init old DB)
         if (!db) initializeDatabase();
+        throw err;
+    }
+});
+
+// Import assets from another library folder
+ipcMain.handle('import-library', async (event, { sourcePath, mode }) => {
+    console.log(`IPC: import-library from ${sourcePath} mode: ${mode}`);
+    
+    let sourceDb;
+    try {
+        const sourceDbPath = path.join(sourcePath, 'assets.db');
+        if (!fs.existsSync(sourceDbPath)) {
+            throw new Error('Source folder does not contain an assets.db file.');
+        }
+
+        // Open source DB as read-only
+        sourceDb = new Database(sourceDbPath, { readonly: true });
+        
+        const sourceAssets = sourceDb.prepare('SELECT * FROM assets').all();
+        const totalAssets = sourceAssets.length;
+        let processedAssets = 0;
+        
+        // Mapping to maintain links within the imported batch
+        const idMapping = new Map();
+
+        dbExec('BEGIN TRANSACTION');
+
+        for (const asset of sourceAssets) {
+            // 1. Insert asset
+            const assetResult = dbRun(
+                'INSERT INTO assets (name, category, thumbnail_url, gallery_urls, video_url, booth_link, nsfw, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [asset.name, asset.category, asset.thumbnail_url, asset.gallery_urls, asset.video_url, asset.booth_link, asset.nsfw, asset.created_at]
+            );
+            const newAssetId = assetResult.lastID;
+            idMapping.set(asset.id, newAssetId);
+
+            // 2. Process files
+            const sourceFiles = sourceDb.prepare('SELECT * FROM asset_files WHERE asset_id = ?').all(asset.id);
+            for (const file of sourceFiles) {
+                const relativePath = file.file_path.startsWith('/uploads/') ? file.file_path.slice('/uploads/'.length) : file.file_path;
+                const srcFilePath = path.join(sourcePath, relativePath);
+                
+                let savedPath = file.file_path;
+                
+                if (fs.existsSync(srcFilePath)) {
+                    const uploadsDir = path.join(config.assetsPath, asset.category);
+                    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+                    
+                    const filename = `${Date.now()}_${path.basename(srcFilePath)}`;
+                    const targetPath = path.join(uploadsDir, filename);
+                    
+                    if (mode === 'move') {
+                        await fs.promises.rename(srcFilePath, targetPath);
+                    } else {
+                        await fs.promises.copyFile(srcFilePath, targetPath);
+                    }
+                    savedPath = `/uploads/${asset.category}/${filename}`;
+                }
+
+                const fileResult = dbRun(
+                    'INSERT INTO asset_files (asset_id, file_path, is_resource, resource_name) VALUES (?, ?, ?, ?)',
+                    [newAssetId, savedPath, file.is_resource, file.resource_name]
+                );
+                const newFileId = fileResult.lastID;
+
+                // 3. Process links
+                const sourceLinks = sourceDb.prepare('SELECT * FROM file_links WHERE file_id = ?').all(file.id);
+                for (const link of sourceLinks) {
+                    const newTargetId = link.target_asset_id ? idMapping.get(link.target_asset_id) : null;
+                    dbRun(
+                        'INSERT INTO file_links (file_id, target_asset_id, manual_name) VALUES (?, ?, ?)',
+                        [newFileId, newTargetId || null, link.manual_name]
+                    );
+                }
+            }
+
+            processedAssets++;
+            const progress = Math.round((processedAssets / totalAssets) * 100);
+            mainWindow.webContents.send('migration-progress', {
+                progress,
+                status: `Importing: ${asset.name} (${processedAssets}/${totalAssets})`
+            });
+        }
+
+        dbExec('COMMIT');
+        sourceDb.close();
+
+        showAppNotification('Import Complete', `${totalAssets} assets have been successfully imported.`);
+        return { success: true };
+
+    } catch (err) {
+        if (db && db.inTransaction) dbExec('ROLLBACK');
+        if (sourceDb) sourceDb.close();
+        console.error('Import failed:', err);
         throw err;
     }
 });

@@ -137,6 +137,10 @@ class ApiService {
     return window.electronAPI.changeAssetsLocation({ newPath, mode });
   }
 
+  async importLibrary(sourcePath, mode) {
+    return window.electronAPI.importLibrary({ sourcePath, mode });
+  }
+
   onMigrationProgress(callback) {
     return window.electronAPI.onMigrationProgress(callback);
   }

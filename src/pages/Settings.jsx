@@ -116,12 +116,110 @@ const MigrationModal = ({ isOpen, onConfirm, onCancel, targetPath }) => {
   );
 };
 
+const ImportModal = ({ isOpen, onConfirm, onCancel, targetPath }) => {
+  const [mode, setMode] = useState(null); // 'copy' or 'move'
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    let unsubscribe;
+    if (isProcessing) {
+      unsubscribe = api.onMigrationProgress((data) => {
+        setProgress(data.progress);
+        setStatus(data.status);
+      });
+    }
+    return () => unsubscribe && unsubscribe();
+  }, [isProcessing]);
+
+  const handleStart = async (selectedMode) => {
+    setMode(selectedMode);
+    setIsProcessing(true);
+    setProgress(0);
+    setStatus('Initializing import...');
+    try {
+      await onConfirm(selectedMode);
+    } catch (err) {
+      console.error('Import error:', err);
+      setStatus('Error: ' + err.message);
+      setIsProcessing(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className={`modal ${isOpen ? 'show' : ''}`}>
+      <div className="modal-content migration-modal">
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <RefreshCw size={24} className={isProcessing ? "spinning" : ""} />
+            <h2 style={{ margin: 0 }}>Import Existing Library</h2>
+          </div>
+        </div>
+
+        {!isProcessing ? (
+          <div className="modal-body">
+            <p>You are about to import assets from:</p>
+            <code className="target-path-badge">{targetPath}</code>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+              This will merge all assets and files from the selected folder into your current library.
+            </p>
+
+            <div className="migration-options">
+              <button
+                className="option-card"
+                onClick={() => handleStart('copy')}
+              >
+                <div className="option-icon"><ChevronRight size={24} /></div>
+                <div className="option-details">
+                  <h4>Copy Files</h4>
+                  <p>Copy files to your current library. Original files will remain untouched. Recommended.</p>
+                </div>
+              </button>
+
+              <button
+                className="option-card"
+                onClick={() => handleStart('move')}
+              >
+                <div className="option-icon"><RefreshCw size={24} /></div>
+                <div className="option-details">
+                  <h4>Move Files</h4>
+                  <p>Move files to your current library. Files will be deleted from the source folder after import.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="modal-body processing">
+            <div className="progress-container">
+              <div className="progress-bar-wrapper">
+                <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+              </div>
+              <span className="progress-percentage">{progress}%</span>
+            </div>
+            <p className="migration-status">{status}</p>
+          </div>
+        )}
+
+        <div className="modal-footer">
+          {!isProcessing && (
+            <button className="secondary-btn" onClick={onCancel}>Cancel</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function Settings() {
   const [config, setConfig] = useState(null);
   const [version, setVersion] = useState({ current: '', latest: null });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [migrationData, setMigrationData] = useState({ isOpen: false, targetPath: null });
+  const [importData, setImportData] = useState({ isOpen: false, targetPath: null });
 
   useEffect(() => {
     fetchConfig();
@@ -161,6 +259,28 @@ function Settings() {
       setMigrationData({ isOpen: false, targetPath: null });
     } catch (err) {
       alert('Migration failed: ' + err.message);
+      throw err;
+    }
+  };
+
+  const handleSelectImportFolder = async () => {
+    try {
+      const folderPath = await api.selectFolder();
+      if (folderPath) {
+        setImportData({ isOpen: true, targetPath: folderPath });
+      }
+    } catch (err) {
+      console.error('Error selecting folder:', err);
+    }
+  };
+
+  const handleConfirmImport = async (mode) => {
+    try {
+      await api.importLibrary(importData.targetPath, mode);
+      setImportData({ isOpen: false, targetPath: null });
+      // Optionally notify user or refresh something
+    } catch (err) {
+      alert('Import failed: ' + err.message);
       throw err;
     }
   };
@@ -229,6 +349,17 @@ function Settings() {
               </div>
               <button className="secondary-btn" onClick={handleSelectFolder}>
                 Change Folder
+              </button>
+              <button
+                className="secondary-btn"
+                onClick={handleSelectImportFolder}
+                style={{
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  color: 'var(--primary)',
+                  border: '1px dashed var(--primary)'
+                }}
+              >
+                Import Library
               </button>
             </div>
           </div>
@@ -369,6 +500,13 @@ function Settings() {
         targetPath={migrationData.targetPath}
         onConfirm={handleConfirmMigration}
         onCancel={() => setMigrationData({ isOpen: false, targetPath: null })}
+      />
+
+      <ImportModal
+        isOpen={importData.isOpen}
+        targetPath={importData.targetPath}
+        onConfirm={handleConfirmImport}
+        onCancel={() => setImportData({ isOpen: false, targetPath: null })}
       />
     </div>
   );

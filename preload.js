@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createAsset: (data) => ipcRenderer.invoke('create-asset', data),
     updateAsset: (data) => ipcRenderer.invoke('update-asset', data),
     deleteAsset: (id) => ipcRenderer.invoke('delete-asset', id),
+    importLibrary: (data) => ipcRenderer.invoke('import-library', data),
+
     
     // File management
     deleteAssetFile: (id) => ipcRenderer.invoke('delete-asset-file', id),
