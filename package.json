@@ -23,7 +23,7 @@
     "bump:patch": "pnpm version patch",
     "bump:minor": "pnpm version minor",
     "bump:major": "pnpm version major",
-    "postversion": "git push && git push --tags",
+    "postversion": "git push --follow-tags",
     "publish": "pnpm run publish:patch",
     "publish:patch": "pnpm run bump:patch && pnpm run release",
     "publish:minor": "pnpm run bump:minor && pnpm run release",

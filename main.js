@@ -58,6 +58,20 @@ if (isPortable) {
     }
 }
 
+async function moveFile(src, dest) {
+    const srcRoot = path.parse(path.resolve(src)).root.toLowerCase();
+    const destRoot = path.parse(path.resolve(dest)).root.toLowerCase();
+
+    if (srcRoot !== destRoot) {
+        // Cross-device: Copy and delete
+        await fs.promises.copyFile(src, dest);
+        await fs.promises.unlink(src);
+    } else {
+        // Same drive: Standard rename
+        await fs.promises.rename(src, dest);
+    }
+}
+
 // App configuration management
 const configPath = path.join(app.getPath('userData'), 'config.json');
 const defaultAssetsPath = isPortable ? path.join(appPath, portableAssetsRelativePath) : path.join(app.getPath('userData'), 'assets');
@@ -593,7 +607,7 @@ ipcMain.handle('import-library', async (event, { sourcePath, mode }) => {
                     const targetPath = path.join(uploadsDir, filename);
                     
                     if (mode === 'move') {
-                        await fs.promises.rename(srcFilePath, targetPath);
+                        await moveFile(srcFilePath, targetPath);
                     } else {
                         await fs.promises.copyFile(srcFilePath, targetPath);
                     }
@@ -807,7 +821,7 @@ ipcMain.handle('create-asset', async (event, { name, category, thumbnail_url, bo
                     }
 
                     if (transferMode === 'move') {
-                        await fs.promises.rename(sourcePath, targetPath);
+                        await moveFile(sourcePath, targetPath);
                     } else {
                         await fs.promises.copyFile(sourcePath, targetPath);
                     }
@@ -893,7 +907,7 @@ ipcMain.handle('update-asset', async (event, { id, name, category, thumbnail_url
                     }
 
                     if (transferMode === 'move') {
-                        await fs.promises.rename(sourcePath, targetPath);
+                        await moveFile(sourcePath, targetPath);
                         savedPath = `/uploads/${category}/${filename}`;
                     } else if (sourcePath && sourcePath.startsWith('/uploads/')) {
                         // Already in uploads, likely just a reference
